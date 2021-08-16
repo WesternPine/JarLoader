@@ -54,7 +54,7 @@ public class DependencyMapper {
 		
 	}
 	
-	public DependencyMapper map() throws InterruptedException {
+	public DependencyMapper map() {
 		
 		//remove duplicate dependencies			
 		toMap.stream().filter(module -> toMap.stream().filter(mod -> mod.getName().equals(module.getName())).count() > 1).map(JavaModule::getName).collect(Collectors.toList()).forEach(name -> toMap.removeIf(module -> module.getName().equals(name)));
@@ -108,7 +108,7 @@ public class DependencyMapper {
 		return dpath;
 	}
 	
-	private DependencyMapper map0() throws InterruptedException {
+	private DependencyMapper map0() {
 		if(toMap.size() < 2)
 			return this;
 		boolean remap = false;

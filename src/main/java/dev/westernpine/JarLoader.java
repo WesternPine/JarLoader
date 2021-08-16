@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 import dev.westernpine.exceptions.InvalidJarFileException;
 import dev.westernpine.exceptions.ModuleLoadException;
+import dev.westernpine.objects.DependencyMapper;
 import dev.westernpine.objects.Jar;
 import dev.westernpine.objects.loaders.URLClassLoaderAccess;
 import dev.westernpine.objects.maven.Dependency;
@@ -84,8 +85,8 @@ public class JarLoader {
         }
 	}
 	
-	public List<JavaModule> loadModules(List<File> jarFiles) {
-		List<JavaModule> modules = jarFiles.stream()
+	public DependencyMapper loadModules(List<File> jarFiles) {
+		return new DependencyMapper(new LinkedList<>(jarFiles.stream()
 				.map(file -> new File(file.getAbsolutePath()))
 				.map(file -> {
 					try {
@@ -96,22 +97,7 @@ public class JarLoader {
 					return null;
 				})
 				.filter(module -> module != null)
-				.collect(Collectors.toList());
-		
-		//sort and initialize modules.
-		(modules = sortModules(modules))
-		.forEach(module -> {
-			try {
-				module.load();
-			} catch (ModuleLoadException le) {
-				System.out.println("A module failed to load: " + le.getMessage());
-			} catch (Exception e) {
-				e.printStackTrace();
-				System.out.println("Failed to initialize module because of an uncaught exception! Skipping...");
-			}
-		});
-		
-		return modules; //Return loaded and unloaded modules!
+				.collect(Collectors.toList()))).map();
 	}
 	
 
