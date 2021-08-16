@@ -88,11 +88,12 @@ public class JarLoader {
 	public DependencyMapper loadModules(List<File> jarFiles) {
 		return new DependencyMapper(new LinkedList<>(jarFiles.stream()
 				.map(file -> new File(file.getAbsolutePath()))
+				.filter(file -> file.isFile() && !file.getName().equals(".jar") && file.getName().endsWith(".jar"))
 				.map(file -> {
 					try {
 						return new JavaModule(file);
-					} catch (ModuleLoadException e) {
-						e.printStackTrace();
+					} catch (ModuleLoadException e1) {
+						e1.printStackTrace();
 					}
 					return null;
 				})
