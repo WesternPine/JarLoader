@@ -1,5 +1,5 @@
 <h1 align="center">JarLoader</h1>
-<h3 align="center">A Java Runtime Jar and dependency management system!</h3>
+<h3 align="center">A Java Runtime Jar and dependency management utility!</h3>
   <div align="center">
     <a href="https://github.com/WesternPine/JarLoader/">
         <img src="https://img.shields.io/github/license/WesternPine/JarLoader">
