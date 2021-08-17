@@ -45,7 +45,7 @@ public class DependencyMapper {
 	 * 
 	 * @return The LinkedList of dependencies mapped in order of execution.
 	 */
-	public LinkedList<JavaModule> getMappedDependencies() {
+	public LinkedList<JavaModule> getMappedModules() {
 		return this.toMap;
 	}
 	

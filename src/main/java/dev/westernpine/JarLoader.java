@@ -8,6 +8,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import dev.westernpine.exceptions.InvalidJarFileException;
@@ -41,6 +42,18 @@ public abstract class JarLoader {
 	@Deprecated
 	public static WrappedURLClassLoader wrapLoader(ClassLoader loader) {
 		return WrappedURLClassLoader.create(loader);
+	}
+	
+	/**
+	 * Load jars into the current class loader. (Only works with URL class loaders!)
+	 * @param loader The class loader to use.
+	 * @param dependency The dependency to import.
+	 * @param saveLocationHandler The file location to look for the jar at, or to save to, using the given dependency.
+	 * @deprecated Only works with ClassLoaders of type URLClassLoader! As of Java 9, the Java Module system now uses strong encapsulation, meaning a deep-reflective operation of 'setAccessible(boolean accessible)` on reflected objects is now prohibited. If you wish to enable dependency loading, start the JVM with the flag: '--add-opens=java.base/java.net=ALL-UNNAMED' to permit access.
+	 */
+	@Deprecated
+	public static void loadDependency(ClassLoader loader, Dependency dependency, Function<Dependency, File> saveLocationHandler) {
+		loadDependency(loader, dependency, saveLocationHandler.apply(dependency));
 	}
 	
 	/**
