@@ -235,7 +235,7 @@ public class JavaModule {
 	 * @return True if this module depends on the name specified.
 	 */
 	public boolean isDependency(String name) {
-		return List.of(softDepends).contains(name) || List.of(depends).contains(name);
+		return Arrays.asList(softDepends).contains(name) || Arrays.asList(depends).contains(name);
 	}
 
 }
