@@ -7,11 +7,9 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -73,7 +71,7 @@ public class JavaModule {
 		}
 		
 		
-		try (JarInputStream in = new JarInputStream(new BufferedInputStream(Files.newInputStream(Path.of(fileUrl.toURI()))))) {
+		try (JarInputStream in = new JarInputStream(new BufferedInputStream(Files.newInputStream(file.toPath())))) {
 			JarEntry entry;
 			while ((entry = in.getNextJarEntry()) != null) {
 				if (entry.getName().equals(MODULE_JSON_FILENAME)) {
@@ -90,7 +88,7 @@ public class JavaModule {
 					}
 				}
 			}
-		} catch (IOException | URISyntaxException e) {
+		} catch (IOException e) {
 			throw new ModuleLoadException("Unable to load jar file contents: " + file.getName(), e);
 		}
 		if(Objects.isNull(name)) {
