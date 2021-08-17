@@ -12,6 +12,11 @@ import java.util.stream.Collectors;
 
 import dev.westernpine.objects.module.JavaModule;
 
+/**
+ * This was a headache for 2 days straight... I cen't believe I wrote this, what a lucid dream.
+ * @author Tyler
+ *
+ */
 public class DependencyMapper {
 	
 	private final Comparator<JavaModule> comparator = new Comparator<JavaModule>() {
@@ -33,10 +38,64 @@ public class DependencyMapper {
 		this.toMap = toMap;
 		this.removedChains = new HashMap<>();
 		this.removedMissingDeendencies = new HashMap<>();
+		map();
 	}
 	
-	private static record DependencyPath(DependencyPath parent, String name) {
+	/**
+	 * 
+	 * @return The LinkedList of dependencies mapped in order of execution.
+	 */
+	public LinkedList<JavaModule> getMappedDependencies() {
+		return this.toMap;
+	}
+	
+	/**
+	 * 
+	 * @return A map of Modules with their corresponding dependency path that inevitably depends on itself.
+	 */
+	public Map<JavaModule, DependencyPath> getRemovedChains() {
+		return this.removedChains;
+	}
+	
+	/**
+	 * 
+	 * @return A map of Modules with their missing required dependency.
+	 */
+	public Map<JavaModule, String> getRemovedMissingDependencies() {
+		return this.removedMissingDeendencies;
+	}
+	
+	public static class DependencyPath {
 		
+		private DependencyPath parent;
+		
+		private String name;
+		
+		public DependencyPath(DependencyPath parent, String name) {
+			this.parent = parent;
+			this.name = name;
+		}
+		
+		/**
+		 * 
+		 * @return Any parent dependeny path.
+		 */
+		public DependencyPath parent() {
+			return this.parent;
+		}
+		
+		/**
+		 * 
+		 * @return The name representing a dependency.
+		 */
+		public String name() {
+			return this.name;
+		}
+		
+		/**
+		 * 
+		 * @return True if the path of dependencies is linking to itself.
+		 */
 		public boolean containsSelf() {
 			DependencyPath p = parent;
 			while(p != null) {
@@ -54,7 +113,7 @@ public class DependencyMapper {
 		
 	}
 	
-	public DependencyMapper map() {
+	private DependencyMapper map() {
 		
 		//remove duplicate dependencies			
 		toMap.stream().filter(module -> toMap.stream().filter(mod -> mod.getName().equals(module.getName())).count() > 1).map(JavaModule::getName).collect(Collectors.toList()).forEach(name -> toMap.removeIf(module -> module.getName().equals(name)));
@@ -108,6 +167,7 @@ public class DependencyMapper {
 		return dpath;
 	}
 	
+	//Recursion!
 	private DependencyMapper map0() {
 		if(toMap.size() < 2)
 			return this;
@@ -150,18 +210,6 @@ public class DependencyMapper {
 		if(remap)
 			return map0();
 		return this;
-	}
-	
-	public LinkedList<JavaModule> getMappedDependencies() {
-		return this.toMap;
-	}
-	
-	public Map<JavaModule, DependencyPath> getRemovedChains() {
-		return this.removedChains;
-	}
-	
-	public Map<JavaModule, String> getRemovedMissingDependencies() {
-		return this.removedMissingDeendencies;
 	}
 	
 }

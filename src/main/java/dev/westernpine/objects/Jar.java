@@ -1,22 +1,30 @@
 package dev.westernpine.objects;
 
-import java.net.URLClassLoader;
+import dev.westernpine.objects.classloaders.JarClassLoader;
 
 public class Jar {
 	
-	private URLClassLoader loader;
+	private JarClassLoader loader;
 	
 	private Class<?> clazz;
 	
-	public Jar(URLClassLoader loader, Class<?> clazz) {
+	public Jar(JarClassLoader loader, Class<?> clazz) {
 		this.loader = loader;
 		this.clazz = clazz;
 	}
 	
-	public URLClassLoader getLoader() {
+	/**
+	 * Get the class loader for this instance.
+	 * @return The class loader for this instance.
+	 */
+	public JarClassLoader getLoader() {
 		return this.loader;
 	}
 	
+	/**
+	 * Get the initialized class.
+	 * @return The initialized class.
+	 */
 	public Class<?> getLoadedClass() {
 		return this.clazz;
 	}

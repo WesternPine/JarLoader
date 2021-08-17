@@ -25,9 +25,10 @@ import java.util.stream.StreamSupport;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import dev.westernpine.JarLoader;
 import dev.westernpine.exceptions.InvalidJarFileException;
 import dev.westernpine.exceptions.ModuleLoadException;
-import dev.westernpine.objects.loaders.ModuleClassLoader;
+import dev.westernpine.objects.classloaders.JarClassLoader;
 
 public class JavaModule {
 	
@@ -47,7 +48,7 @@ public class JavaModule {
 	
 	private String[] depends;
 	
-	private ModuleClassLoader classLoader;
+	private JarClassLoader loader;
 	
 	private Object instance;
 	
@@ -55,6 +56,11 @@ public class JavaModule {
 	
 	public Consumer<JavaModule> onUnload = module -> {};
 	
+	/**
+	 * A representation of a jar file as an environment.
+	 * @param file The file to load.
+	 * @throws ModuleLoadException If any exception occurs while enabling a module, such as it being an invalid jar, missing module.json fields, and general inability to load a jar.
+	 */
 	public JavaModule(File file) throws ModuleLoadException {
 		try {
 			if(!(file.isFile() && !file.getName().equals(".jar") && file.getName().endsWith(".jar"))) {
@@ -63,8 +69,7 @@ public class JavaModule {
 			fileUrl = file.toURI().toURL();
 			this.file = file;
 		} catch (MalformedURLException | InvalidJarFileException e) {
-			e.printStackTrace();
-			throw new ModuleLoadException("Unable to parse File URL: " + file.getName());
+			throw new ModuleLoadException("Unable to parse File URL: " + file.getName(), e);
 		}
 		
 		
@@ -81,91 +86,142 @@ public class JavaModule {
 						this.depends =  Optional.ofNullable(moduleJson.get("depends")).map(object -> object.isJsonNull() ? null : object.getAsJsonArray()).map(jsonArray -> StreamSupport.stream(jsonArray.spliterator(), false).map(jsonElement -> jsonElement.getAsJsonObject().getAsString()).toArray(String[]::new)).orElse(new String[] {});
 						break;
 					} catch (Exception e) {
-						throw new ModuleLoadException("Unable to parse " + MODULE_JSON_FILENAME + " for jar: " + file.getName());
+						throw new ModuleLoadException("Unable to parse " + MODULE_JSON_FILENAME + " for jar: " + file.getName(), e);
 					}
 				}
 			}
 		} catch (IOException | URISyntaxException e) {
-			throw new ModuleLoadException("Unable to load jar file contents: " + file.getName());
+			throw new ModuleLoadException("Unable to load jar file contents: " + file.getName(), e);
 		}
 		if(Objects.isNull(name)) {
-			throw new ModuleLoadException("Unable to find required \"name\" json member in " + MODULE_JSON_FILENAME + " for jar: " + file.getName());
+			throw new ModuleLoadException("Unable to find required \"name\" json member in " + MODULE_JSON_FILENAME + " for jar: " + file.getName(), new NullPointerException());
 		}
 		if(Objects.isNull(main)) {
-			throw new ModuleLoadException("Unable to find required \"main\" json member in " + MODULE_JSON_FILENAME + " for jar: " + file.getName());
+			throw new ModuleLoadException("Unable to find required \"main\" json member in " + MODULE_JSON_FILENAME + " for jar: " + file.getName(), new NullPointerException());
 		}
 		if(Objects.isNull(version)) {
-			throw new ModuleLoadException("Unable to find required \"version\" json member in " + MODULE_JSON_FILENAME + " for jar: " + file.getName());
+			throw new ModuleLoadException("Unable to find required \"version\" json member in " + MODULE_JSON_FILENAME + " for jar: " + file.getName(), new NullPointerException());
 		}
 	}
 	
+	/**
+	 * 
+	 * @return The jar file.
+	 */
 	public File getFile() {
 		return this.file;
 	}
 	
+	/**
+	 * 
+	 * @return The URL of the jar file.
+	 */
 	public URL getFileURL() {
 		return this.fileUrl;
 	}
 	
+	/**
+	 * 
+	 * @return The name of this module as specified in the module.json.
+	 */
 	public String getName() {
 		return this.name;
 	}
 	
+	/**
+	 * 
+	 * @return The main class of this module as specified in the module.json.
+	 */
 	public String getMain() {
 		return this.main;
 	}
 	
+	/**
+	 * 
+	 * @return The version of this module as specified in the module.json.
+	 */
 	public String getVersion() {
 		return this.version;
 	}
 	
+	/**
+	 * 
+	 * @return Any dependencies optionally required for this module to start as specified in the module.json.
+	 */
 	public String[] getSoftDepends() {
 		return this.softDepends;
 	}
 	
+	/**
+	 * 
+	 * @return Any dependencies required for this module to start as specified in the module.json.
+	 */
 	public String[] getDepends() {
 		return this.depends;
 	}
 	
+	/**
+	 * 
+	 * @return The class loader used to load this jar.
+	 */
+	public JarClassLoader getLoader() {
+		return this.loader;
+	}
+	
+	/**
+	 * 
+	 * @return The instance of the main class.
+	 */
 	public Object getInstance() {
 		return this.instance;
 	}
 	
-	@SuppressWarnings("resource")
+	/**
+	 * Loads this module via getting the constructor of the main class, and initializing it.
+	 * @throws ModuleLoadException If an exception occured initializing the module.
+	 */
 	public void load() throws ModuleLoadException {
-		this.classLoader = new ModuleClassLoader().addUrl(fileUrl).addToClassloaders();
+		this.loader = JarLoader.newLoader(true);
+		loader.addURL(fileUrl);
 		try {
-			Class<?> clazz = this.classLoader.loadClass(main);
+			Class<?> clazz = this.loader.loadClass(main);
 			try {
-				instance = clazz.getDeclaredConstructor(JavaModule.class).newInstance(this);
-			} catch (NoSuchMethodException e1) {
-				try {
-					instance = clazz.getDeclaredConstructor().newInstance();
-				} catch (NoSuchMethodException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e2) {
-					e2.printStackTrace();
-					throw new ModuleLoadException(e2.getMessage());
-				}
+				instance = clazz.getDeclaredConstructor().newInstance();
+			} catch (NoSuchMethodException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+				e1.printStackTrace();
+				throw new ModuleLoadException(e1.getMessage(), e1);
 			} catch (Exception e2) {
 				e2.printStackTrace();
-				throw new ModuleLoadException(e2.getMessage());
+				throw new ModuleLoadException(e2.getMessage(), e2);
 			}
 		} catch (ClassNotFoundException e) {
-			throw new ModuleLoadException(e.getMessage());
+			throw new ModuleLoadException(e.getMessage(), e);
 		}
-		
 		this.onLoad.accept(this);
 	}
 	
+	/**
+	 * Attempts to unload the instance of this module by closing the class loader, and nullifying the instance.
+	 * @throws IOException
+	 */
 	public void unload() throws IOException {
 		this.onUnload.accept(this);
 		this.instance = null;
-		this.classLoader.close();
+		this.loader.close();
 	}
 	
+	/**
+	 * 
+	 * @return True if the instance is loaded.
+	 */
 	public boolean isLoaded() {
 		return this.instance != null;
 	}
 	
+	/**
+	 * 
+	 * @return A list of all dependencies, soft or not.
+	 */
 	public List<String> getAllDependencies() {
 		List<String> dependencies = new ArrayList<>();
 		dependencies.addAll(Arrays.asList(depends));
@@ -173,17 +229,13 @@ public class JavaModule {
 		return dependencies;
 	}
 	
+	/**
+	 * Check if this module contains a dependency.
+	 * @param name The module name to check.
+	 * @return True if this module depends on the name specified.
+	 */
 	public boolean isDependency(String name) {
 		return List.of(softDepends).contains(name) || List.of(depends).contains(name);
 	}
 
 }
-
-
-
-
-
-
-
-
-
