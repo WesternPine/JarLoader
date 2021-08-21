@@ -1,5 +1,5 @@
 <h1 align="center">JarLoader</h1>
-<h3 align="center">A Java Runtime Jar and dependency management system!</h3>
+<h3 align="center">A Java Runtime Jar and dependency management utility!</h3>
   <div align="center">
     <a href="https://github.com/WesternPine/JarLoader/">
         <img src="https://img.shields.io/github/license/WesternPine/JarLoader">
@@ -23,7 +23,7 @@ One such example, would be to load all dependencies at runtime, rather than buil
 
 ## What is a ClassLoader?
 
-//CONTENT HERE (System, EXT, Application)
+A class loader is basically how Java loads files and classes into the JVM as code. There are 3 main types of class loaders, the System class loader that loads core java classes, the Extension class loader which loads other extensions to the JVM, and the Application class loader which loads the jars we're familiar with. In this particular scenario, this library targets the Application class loader, more specifically the URLClassLoader, to load in jar files at runtime.
 
 # Examples
 
