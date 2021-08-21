@@ -25,6 +25,7 @@ public abstract class WrappedURLClassLoader {
 				return new ReflectiveLoader((URLClassLoader) classLoader);
 			else if(UnsafeLoader.UNSAFE != null)
 				return new UnsafeLoader((URLClassLoader) classLoader);
+		//TODO: Instrumentation! :D
 		return UNSUPPORTED;
 	}
 	
@@ -75,6 +76,7 @@ public abstract class WrappedURLClassLoader {
      * Java 8-
      */
     private static class ReflectiveLoader extends WrappedURLClassLoader {
+    	//We could have used `Class.forName("java.lang.Module");`, but with this way we can reuse a method we'e checking for anyways.
     	private static final Method ADD_URL_METHOD;
         static {
             Method method;
@@ -108,6 +110,7 @@ public abstract class WrappedURLClassLoader {
      * Java 9+
      */
     private static class UnsafeLoader extends WrappedURLClassLoader {
+    	//We could have used `Class.forName("sun.misc.Unsafe");`, but with this way we can reuse an object we'e going to use anyways.
     	private static final Unsafe UNSAFE;
     	static {
     		Unsafe unsafe;

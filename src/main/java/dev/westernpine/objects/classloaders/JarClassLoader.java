@@ -5,55 +5,56 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 
+import dev.westernpine.JarLoader;
 import dev.westernpine.exceptions.InvalidJarFileException;
 
 public class JarClassLoader extends URLClassLoader {
 
 	static {ClassLoader.registerAsParallelCapable();}
-
-	private static final Set<JarClassLoader> loaders = new CopyOnWriteArraySet<>();
 	
-	/**
-	 * Get all the saved loaders that try to load classes off each other.
-	 * @return
-	 */
-	public static Set<JarClassLoader> getLoaders() {
-		return loaders;
-	}	
+	private JarLoader jarLoader;
 	
 	/**
 	 * Make a new URLClassLoader that lets you add URLs of files to load classes from.
 	 * @param urls The Default URLs to use.
 	 */
-	public JarClassLoader(URL[] urls) {
+	public JarClassLoader(JarLoader jarLoader, URL[] urls) {
 		super(urls);
+		this.jarLoader = jarLoader;
 	}	
 	
 	/**
 	 * Make a new URLClassLoader that lets you add URLs of files to load classes from.
 	 */
-	public JarClassLoader() {
+	public JarClassLoader(JarLoader jarLoader) {
 		super(new URL[] {});
+		this.jarLoader = jarLoader;
 	}
 	
 	/**
-	 * Save this loader to the list of loaders to load classes from.
+	 * Check if this loader is isolated.
+	 * @return True if tis loader is isolated.
+	 */
+	public boolean isIsolated() {
+		return this.jarLoader.isIsolated(this);
+	}
+	
+	/**
+	 * Isolate this loader to prevent other loaders from loading classes from it, and this loader from loading classes from others.
 	 * @return This same object.
 	 */
-	public JarClassLoader save() {
-		loaders.add(this);
+	public JarClassLoader isolate() {
+		this.jarLoader.isolate(this);
 		return this;
 	}
 	
 	/**
-	 * Unsave this loader to prevent other loaders from loading classes from it.
+	 * Integrate this loader to the list of loaders to load classes from.
 	 * @return This same object.
 	 */
-	public JarClassLoader unsave() {
-		loaders.remove(this);
+	public JarClassLoader integrate() {
+		this.jarLoader.integrate(this);
 		return this;
 	}
 	
@@ -84,7 +85,7 @@ public class JarClassLoader extends URLClassLoader {
 	 */
 	@Override
 	public void close() throws IOException {
-		loaders.remove(this);
+		isolate();
 		super.close();
 	}
 	
@@ -93,7 +94,7 @@ public class JarClassLoader extends URLClassLoader {
 	 */
 	@Override
 	protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-		return loadClass0(name, resolve, loaders.contains(this));
+		return loadClass0(name, resolve, !isIsolated());
 	}
 	
 	/*
@@ -104,7 +105,7 @@ public class JarClassLoader extends URLClassLoader {
 		try {return super.loadClass(name, resolve);} catch (ClassNotFoundException ignored) {}
 		//Try to load class from the super of remembered class loaders.
 		if (checkOther) {
-			for (JarClassLoader loader : loaders) {
+			for (JarClassLoader loader : this.jarLoader.getLoaders()) {
 				if (loader != this) {
 					try {return loader.loadClass0(name, resolve, false);} catch (ClassNotFoundException ignored) {}
 				}

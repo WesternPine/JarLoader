@@ -32,6 +32,8 @@ public class JavaModule {
 	
 	public static final String MODULE_JSON_FILENAME = "module.json";
 	
+	private JarLoader jarLoader;
+	
 	private File file;
 	
 	private URL fileUrl;
@@ -56,10 +58,12 @@ public class JavaModule {
 	
 	/**
 	 * A representation of a jar file as an environment.
+	 * @param jarLoader 
 	 * @param file The file to load.
 	 * @throws ModuleLoadException If any exception occurs while enabling a module, such as it being an invalid jar, missing module.json fields, and general inability to load a jar.
 	 */
-	public JavaModule(File file) throws ModuleLoadException {
+	public JavaModule(JarLoader jarLoader, File file) throws ModuleLoadException {
+		this.jarLoader = jarLoader;
 		try {
 			if(!(file.isFile() && !file.getName().equals(".jar") && file.getName().endsWith(".jar"))) {
 				throw new InvalidJarFileException(file);
@@ -179,7 +183,7 @@ public class JavaModule {
 	 * @throws ModuleLoadException If an exception occured initializing the module.
 	 */
 	public void load() throws ModuleLoadException {
-		this.loader = JarLoader.newLoader(true);
+		this.loader = jarLoader.newLoader(true);
 		loader.addURL(fileUrl);
 		try {
 			Class<?> clazz = this.loader.loadClass(main);
